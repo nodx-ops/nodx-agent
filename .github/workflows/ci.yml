@@ -28,7 +28,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-          cache: true
+          # cache OFF on purpose: setup-go keys its cache on go.sum, and this
+          # project has no go.sum because it has no dependencies. Leaving it
+          # on posts "Restore cache failed: go.sum not found" on every run,
+          # which reads like a defect rather than the intended state.
+          cache: false
 
       - name: gofmt (must be clean)
         run: |
@@ -100,7 +104,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-          cache: true
+          cache: false   # no go.sum by design (stdlib-only)
 
       - name: package tools
         run: sudo apt-get update && sudo apt-get install -y rpm
