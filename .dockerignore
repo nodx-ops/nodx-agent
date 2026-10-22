@@ -1,0 +1,12 @@
+# 052 hardening: build-context hygiene. Packaging outputs (*.deb /
+# *.rpm) + .env must never ship to the daemon on every build.
+*.deb
+*.rpm
+nodx-agent
+*.test
+*.out
+*.exe
+.env
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,25 @@
+# Build output
+/nodx-agent
+/dist/
+/build/
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Packaging artifacts
+*.deb
+*.rpm
+
+# Local agent state — never commit
+spool/
+state.json
+*.env
+.env
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

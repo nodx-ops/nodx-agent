@@ -1,0 +1,46 @@
+# systemd unit for the R26 agent. Hardened: DynamicUser + StateDirectory own
+# /var/lib/nodx-agent (matches the agent's default state/spool paths),
+# ProtectSystem=strict keeps /proc + /sys readable for collection while the
+# rest of the OS is read-only. Setup:
+#   1. cp /etc/nodx/agent.yaml.<profile>.example /etc/nodx/agent.yaml
+#   2. install -m 0600 /dev/null /etc/nodx/agent.env   # secrets live here
+#      (AGENT_ID, AGENT_AUTH_TOKEN, NODX_SERVER, NODX_AGENT_SECRET, DATACENTER_ID)
+#   3. systemctl enable --now nodx-agent
+[Unit]
+Description=Nodx deployment agent (R26) — hardware telemetry
+Documentation=https://nodx-ops.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/nodx-agent --config /etc/nodx/agent.yaml
+# Optional env file for secrets (missing file is OK: lone '-' prefix).
+EnvironmentFile=-/etc/nodx/agent.env
+# Identity + spool live under /var/lib/nodx-agent, owned by the dynamic user.
+DynamicUser=true
+StateDirectory=nodx-agent
+# R41: zero-touch USB stick (FAT32, /media/usb/nodx-config.yaml) must be readable when run as DynamicUser
+ReadWritePaths=/media/usb /etc/nodx
+# Hardening (agent needs: outbound HTTPS to the edge, exec of
+# ipmitool/nvidia-smi, reads of /proc + /sys, writes to its state dir).
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+# Survive partitions and edge outages; fail-fast exits (bad config/claim)
+# must NOT be restarted into a hot loop — systemd still backs off, but the
+# operator error needs eyes, so keep the delay visible.
+Restart=on-failure
+RestartSec=30s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+# SaaS profile → Nodx cloud. Copy to /etc/nodx/agent.yaml, fill the five
+# human-claimed values (pair the agent via the API first, then inject the
+# AGENT_ID + AGENT_AUTH_TOKEN it returns). Env vars beat every key here.
+server: "https://ingest.nodx-ops.com" # REPLACE-ME with your SaaS endpoint
+agent_secret: "REPLACE-ME"            # NODX_AGENT_SECRET (Bearer for telemetry)
+agent_id: "REPLACE-ME"                # AGENT_ID: agents.id UUID from pairing (never auto-generated)
+agent_auth_token: "REPLACE-ME"        # AGENT_AUTH_TOKEN: pairing claim token
+datacenter_id: "REPLACE-ME"           # DATACENTER_ID: SaaS region/site label
+poll_interval: 15s
+heartbeat_interval: 60s
+request_timeout: 10s
+redfish_enabled: false # STUB: on-agent Redfish is deferred (R26); must stay false
+# state_path: /var/lib/nodx-agent/state.json
+# spool_dir: /var/lib/nodx-agent/spool
+# obs_addr: "127.0.0.1:6060"

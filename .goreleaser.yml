@@ -1,0 +1,92 @@
+# GoReleaser config for nodx-agent — cuts .deb / .rpm / tarball on a `v*` tag.
+#
+# Deliberately minimal: the agent is a single static binary with no
+# dependencies, so packaging is metadata + the binary + the systemd unit.
+#
+# Local rehearsal (never from CI):
+#   goreleaser release --snapshot --clean --skip=publish
+#
+# Why arm64 + amd64: fleet agents run on both cloud arm64 hosts and x86
+# datacenter hardware. Building both from day one avoids a broken install
+# later.
+version: 2
+
+project_name: nodx-agent
+
+before:
+  hooks:
+    - go mod tidy
+    - go vet ./...
+    - go test ./...
+
+builds:
+  - id: nodx-agent
+    main: ./cmd/nodx-agent
+    binary: nodx-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      # Version is read from heartbeat.Version at runtime; ldflags injection
+      # is intentionally omitted so the tag and the binary cannot disagree.
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+      - packaging/nodx-agent.service
+
+# nfpm produces both .deb and .rpm from one stanza — the same package
+# fields the upstream packaging already uses, so installed metadata stays
+# consistent across channels.
+nfpms:
+  - id: packages
+    package_name: nodx-agent
+    vendor: NodX
+    homepage: https://nodx-ops.com
+    maintainer: "NodX <support@nodx-ops.com>"
+    description: |-
+      NodX telemetry agent
+      Collects hardware telemetry (temperature, power, fans, GPU) from the
+      local host and delivers it as JSON envelopes over HTTPS.
+    license: Apache-2.0
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    section: utils
+    priority: optional
+    contents:
+      - src: packaging/nodx-agent.service
+        dst: /etc/systemd/system/nodx-agent.service
+      - src: README.md
+        dst: /usr/share/doc/nodx-agent/README.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+
+release:
+  name_template: "nodx-agent {{.Tag}}"
+  draft: false
+  prerelease: auto

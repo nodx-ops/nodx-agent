@@ -1,0 +1,41 @@
+# nfpm single-YAML package definition → .deb/.rpm for the R26 agent.
+# Build: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -tags timetzdata
+#   -o dist/nodx-agent ./cmd/nodx-agent
+# Then:  nfpm package --packager deb --target dist/ -f packaging/nfpm.yaml
+#        nfpm package --packager rpm --target dist/ -f packaging/nfpm.yaml
+# (paths below are relative to packaging/; the binary lands in dist/.)
+# NOTE: keep version in sync with internal/heartbeat Version (0.1.0, inert).
+name: nodx-agent
+version: 0.1.0
+release: 1
+arch: amd64
+maintainer: Nodx Group
+description: Nodx deployment agent — first-boot registration, hardware telemetry, resilient delivery
+license: Proprietary
+contents:
+  - src: ../dist/nodx-agent
+    dst: /usr/bin/nodx-agent
+    file_info: { mode: 0755 }
+  # Config profiles ship as examples: the operator copies ONE to
+  # /etc/nodx/agent.yaml and injects secrets via /etc/nodx/agent.env.
+  - src: ./profiles/saas.yaml
+    dst: /etc/nodx/agent.yaml.saas.example
+    file_info: { mode: 0640 }
+  - src: ./profiles/onprem.yaml
+    dst: /etc/nodx/agent.yaml.onprem.example
+    file_info: { mode: 0640 }
+  - src: ./profiles/lite.yaml
+    dst: /etc/nodx/agent.yaml.lite.example
+    file_info: { mode: 0640 }
+  - src: ./nodx-agent.service
+    dst: /lib/systemd/system/nodx-agent.service
+    file_info: { mode: 0644 }
+overrides:
+  deb:
+    depends:
+      - ca-certificates
+      - systemd
+  rpm:
+    depends:
+      - ca-certificates
+      - systemd
